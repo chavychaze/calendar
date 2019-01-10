@@ -79,19 +79,8 @@ const listEvents = async (callback) => {
 app.get('/api/calendar', (req, res, next) => {
   listEvents((events, err) => {
     if (err) return next(err);
-    // await res.send(events);
     console.log(typeof events);
     res.json(events);
-    // await res.send(events.map((event, i) => {
-    //   const start = event.start.dateTime;
-    //   const result = { 
-    //     start,
-    //     summary: event.summary
-    //   }
-    //   // console.log(result);
-    //   return result;
-    //   // return (`${start} - ${event.summary}`);
-    // }));
   });
 });
 
