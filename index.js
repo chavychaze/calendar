@@ -27,10 +27,10 @@ const authorize = (credentials) => {
 
   const oAuth2Client = new google.auth.OAuth2(
     client_id, client_secret, redirect_uris);
-  if (!token) return getAccessToken(oAuth2Client, callback);
+  if (!token) return getAccessToken(oAuth2Client);
 
   oAuth2Client.setCredentials(token);
-  // return callback(oAuth2Client);
+  return (oAuth2Client);
 }
 
 /**
@@ -39,7 +39,7 @@ const authorize = (credentials) => {
  * @param {google.auth.OAuth2} oAuth2Client The OAuth2 client to get token for.
  * @param {getEventsCallback} callback The callback for the authorized client.
  */
-const getAccessToken = (oAuth2Client, callback) => {
+const getAccessToken = (oAuth2Client) => {
   const authUrl = oAuth2Client.generateAuthUrl({
     access_type: 'offline',
     scope: SCOPES,
@@ -48,7 +48,7 @@ const getAccessToken = (oAuth2Client, callback) => {
   oAuth2Client.getToken(code, (err, token) => {
     if (err) return console.error('Error retrieving access token', err);
     oAuth2Client.setCredentials(token);
-    return callback(oAuth2Client);
+    return (oAuth2Client);
   });
 }
 
@@ -56,8 +56,8 @@ const getAccessToken = (oAuth2Client, callback) => {
  * Lists the next 10 events on the user's primary calendar.
  * @param {google.auth.OAuth2} auth An authorized OAuth2 client.
  */
-const listEvents = () => {
-  const auth = authorize(credentials);
+const listEvents = async (callback) => {
+  const auth = await authorize(credentials);
   const calendar = google.calendar({ version: 'v3', auth });
   calendar.events.list({
     calendarId: 'primary',
@@ -67,29 +67,31 @@ const listEvents = () => {
     orderBy: 'startTime',
   }, (err, res) => {
     if (err) return console.log('The API returned an error: ' + err);
-    // const events = res.data.items;
-    return res.data.items;
-    // if (events.length) {
-    // console.log('Upcoming 10 events:');
-    //   return events.map((event, i) => {
-    //     const start = event.start.dateTime || event.start.date;
-    //     console.log(`${start} - ${event.summary}`);
-    //   });
-    // } else {
-    //   console.log('No upcoming events found.');
-    // }
+    const events = res.data.items;
+    // return res.data.items;
+    if (events.length) {
+      // console.log('Upcoming 10 events:');
+      //   events.map((event, i) => {
+      //     const start = event.start.dateTime || event.start.date;
+      //     console.log(`${start} - ${event.summary}`);
+      //   });
+      callback(events);
+    } else {
+      callback('No upcoming events found.');
+    }
   });
 }
 // authorize(credentials, listEvents);
 
-app.get('/api/calendar', (req, res) => {
-  const data = listEvents();
-  if(!data) res.json('Error');
-  const start = data.start.dateTime || data.start.date;
-  console.log(`${start} - ${data.summary}`);
-  // console.log('aaaaaaaaaaaa', data)
-  res.json(`${start} - ${data.summary}`);
+app.get('/api/calendar', (req, res, next) => {
+  listEvents( async (events, err) => {
+    if (err) return next(err);
+    // await res.send(events);
+    await res.send(events.map((event, i) => {
+      const start = event.start.dateTime;
+      return (`${start} - ${event.summary}`);
+    }));
+  });
 });
-// console.log('aaaaaaaaaaaaaaaaaaaa', authorize(credentials, listEvents))
 
 app.listen(port, () => console.log(`Server started on port ${port}`));
