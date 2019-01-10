@@ -68,29 +68,30 @@ const listEvents = async (callback) => {
   }, (err, res) => {
     if (err) return console.log('The API returned an error: ' + err);
     const events = res.data.items;
-    // return res.data.items;
     if (events.length) {
-      // console.log('Upcoming 10 events:');
-      //   events.map((event, i) => {
-      //     const start = event.start.dateTime || event.start.date;
-      //     console.log(`${start} - ${event.summary}`);
-      //   });
       callback(events);
     } else {
       callback('No upcoming events found.');
     }
   });
 }
-// authorize(credentials, listEvents);
 
 app.get('/api/calendar', (req, res, next) => {
-  listEvents( async (events, err) => {
+  listEvents((events, err) => {
     if (err) return next(err);
     // await res.send(events);
-    await res.send(events.map((event, i) => {
-      const start = event.start.dateTime;
-      return (`${start} - ${event.summary}`);
-    }));
+    console.log(typeof events);
+    res.json(events);
+    // await res.send(events.map((event, i) => {
+    //   const start = event.start.dateTime;
+    //   const result = { 
+    //     start,
+    //     summary: event.summary
+    //   }
+    //   // console.log(result);
+    //   return result;
+    //   // return (`${start} - ${event.summary}`);
+    // }));
   });
 });
 
