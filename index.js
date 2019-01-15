@@ -1,29 +1,28 @@
 const { google } = require('googleapis');
 const express = require('express');
 
-var credentials = require('./authorization-data/credentials').installed;
-var token = require('./authorization-data/token');
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config()
+}
+
+const token = {
+  access_token: process.env.ACCESS_TOKEN,
+  refresh_token: process.env.REFRESH_TOKEN,
+  scope: process.env.SCOPE,
+  token_type: process.env.TOKEN_TYPE,
+  expiry_date: process.env.EXPIRY_DATE
+}
 
 const app = express();
 
-const port = 5000;
+const port = process.env.PORT || 5000;
 
-// If modifying these scopes, delete token.json.
 const SCOPES = ['https://www.googleapis.com/auth/calendar.readonly'];
-// The file token.json stores the user's access and refresh tokens, and is
-// created automatically when the authorization flow completes for the first
-// time.
 
-/**
- * Create an OAuth2 client with the given credentials, and then execute the
- * given callback function.
- * @param {Object} credentials The authorization client credentials.
- * @param {function} callback The callback to call with the authorized client.
- */
-const authorize = (credentials) => {
-  const client_secret = credentials["client_secret"]
-    , client_id = credentials["client_id"]
-    , redirect_uris = credentials["redirect_uris[0]"];
+const authorize = () => {
+  const client_secret = process.env.CLIENT_SECRET,
+    client_id = process.env.CLIENT_ID,
+    redirect_uris = process.env.REDIRECT_URIS;
 
   const oAuth2Client = new google.auth.OAuth2(
     client_id, client_secret, redirect_uris);
@@ -33,12 +32,6 @@ const authorize = (credentials) => {
   return (oAuth2Client);
 }
 
-/**
- * Get and store new token after prompting for user authorization, and then
- * execute the given callback with the authorized OAuth2 client.
- * @param {google.auth.OAuth2} oAuth2Client The OAuth2 client to get token for.
- * @param {getEventsCallback} callback The callback for the authorized client.
- */
 const getAccessToken = (oAuth2Client) => {
   const authUrl = oAuth2Client.generateAuthUrl({
     access_type: 'offline',
@@ -52,12 +45,8 @@ const getAccessToken = (oAuth2Client) => {
   });
 }
 
-/**
- * Lists the next 10 events on the user's primary calendar.
- * @param {google.auth.OAuth2} auth An authorized OAuth2 client.
- */
 const listEvents = async (callback) => {
-  const auth = await authorize(credentials);
+  const auth = await authorize();
   const calendar = google.calendar({ version: 'v3', auth });
   calendar.events.list({
     calendarId: 'primary',
